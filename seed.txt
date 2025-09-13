@@ -1,0 +1,4 @@
+# Format: Nama=PrivateKey
+
+akun1=5J1F7GHAVf1LuUHhxQtzuFo8x_example_private_key_1
+akun2=5K2G8HIBWg2MvVIiyRu0vGp9y_example_private_key_2

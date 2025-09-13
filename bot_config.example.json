@@ -1,0 +1,32 @@
+{
+  "_comment": "Contoh konfigurasi bot - copy ke bot_config.json dan edit sesuai kebutuhan",
+  
+  "telegram_token": "1234567890:ABCdefGHIjklMNOpqrsTUVwxyz",
+  "chat_id": "123456789",
+  
+  "capsolver_token": "CAP-1234567890ABCDEF",
+  
+  "cdp_url": "http://127.0.0.1:9222",
+  "target_url": "https://flip.gg/",
+  
+  "check_interval_sec": 5,
+  "reload_every_sec": 300,
+  "join_cooldown_sec": 60,
+  "turnstile_wait_ms": 600000,
+  "after_join_idle_sec": 10,
+  
+  "auto_solve_captcha": true,
+  "max_captcha_wait_time": 120,
+  "success_check_timeout": 15,
+  "entered_check_timeout": 10,
+  
+  "_setup_instructions": {
+    "telegram_token": "Dapatkan dari @BotFather di Telegram",
+    "chat_id": "Dapatkan dari @userinfobot di Telegram", 
+    "capsolver_token": "Daftar di https://capsolver.com dan dapatkan API key",
+    "auto_solve_captcha": "true = gunakan Capsolver otomatis, false = manual saja",
+    "max_captcha_wait_time": "Waktu maksimal tunggu Capsolver (detik)",
+    "success_check_timeout": "Waktu tunggu deteksi notifikasi sukses (detik)",
+    "entered_check_timeout": "Waktu tunggu deteksi status ENTERED (detik)"
+  }
+}

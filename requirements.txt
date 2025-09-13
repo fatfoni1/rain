@@ -1,0 +1,218 @@
+# ====================================
+# BOT FLIP.GG - FULL DEPENDENCIES
+# ====================================
+# Jalankan: pip install -r requirements.txt
+# Semua dependency akan terinstall otomatis
+
+# Core Browser Automation
+playwright==1.40.0
+
+# Async HTTP Client & Server
+aiohttp==3.9.1
+aiofiles==23.2.0
+
+# Telegram Bot Integration
+python-telegram-bot==20.7
+
+# HTTP Requests
+requests==2.31.0
+urllib3==2.1.0
+
+# JSON & Data Processing
+json5==0.9.14
+jsonschema==4.20.0
+
+# Async Programming Support
+asyncio-mqtt==0.16.1
+asyncio-throttle==1.0.2
+
+# Web Scraping & Parsing
+beautifulsoup4==4.12.2
+lxml==4.9.3
+html5lib==1.1
+
+# Regex & Text Processing
+regex==2023.10.3
+
+# Date & Time Utilities
+python-dateutil==2.8.2
+pytz==2023.3
+
+# Logging & Monitoring
+colorlog==6.8.0
+loguru==0.7.2
+
+# System Monitoring
+psutil==5.9.6
+
+# Cryptography & Security
+cryptography==41.0.7
+certifi==2023.11.17
+
+# Configuration & Environment
+python-dotenv==1.0.0
+configparser==6.0.0
+
+# Error Handling & Retry
+tenacity==8.2.3
+backoff==2.2.1
+
+# Performance & Memory
+memory-profiler==0.61.0
+cachetools==5.3.2
+
+# Network & Proxy Support
+pysocks==1.7.1
+httpx==0.25.2
+
+# File & Path Utilities
+pathlib2==2.3.7
+watchdog==3.0.0
+
+# Random & Math Utilities
+numpy==1.24.4
+random2==1.0.1
+
+# Selenium (Backup Browser Automation)
+selenium==4.15.2
+webdriver-manager==4.0.1
+
+# Additional Async Support
+anyio==4.1.0
+trio==0.23.1
+
+# Image Processing (jika diperlukan)
+Pillow==10.1.0
+
+# Database Support (jika diperlukan)
+sqlite3==0.4.1
+
+# API & Web Framework Support
+fastapi==0.104.1
+uvicorn==0.24.0
+
+# Testing & Development
+pytest==7.4.3
+pytest-asyncio==0.21.1
+
+# XML Processing
+xmltodict==0.13.0
+
+# CSV & Data Export
+pandas==2.1.3
+openpyxl==3.1.2
+
+# Compression
+zipfile36==0.1.3
+
+# Threading & Multiprocessing
+concurrent-futures==3.1.1
+
+# Socket & Network
+websockets==12.0
+
+# User Agent & Headers
+fake-useragent==1.4.0
+
+# Cookie & Session Management
+browser-cookie3==0.19.1
+
+# Proxy & VPN Support
+requests-socks==1.0
+
+# Advanced HTTP Features
+httpcore==1.0.2
+h11==0.14.0
+h2==4.1.0
+
+# SSL & TLS
+pyOpenSSL==23.3.0
+
+# Character Encoding
+chardet==5.2.0
+charset-normalizer==3.3.2
+
+# URL Processing
+yarl==1.9.3
+multidict==6.0.4
+
+# Async Generators
+aioitertools==0.11.0
+
+# Signal Processing
+blinker==1.7.0
+
+# Markup Processing
+MarkupSafe==2.1.3
+
+# ID Generation
+uuid==1.30
+
+# Platform Detection
+platform==1.0.8
+
+# Environment Variables
+os-sys==2.1.4
+
+# File Type Detection
+python-magic==0.4.27
+
+# Progress Bars
+tqdm==4.66.1
+
+# Command Line Interface
+click==8.1.7
+argparse==1.4.0
+
+# Validation
+validators==0.22.0
+
+# Hashing
+hashlib==20081119
+
+# Base64 Encoding
+base64==0.1.0
+
+# Pickle Support
+dill==0.3.7
+
+# Timezone Support
+tzlocal==5.2
+
+# Locale Support
+babel==2.13.1
+
+# String Processing
+stringcase==1.2.0
+
+# Email Utilities (jika diperlukan)
+email-validator==2.1.0
+
+# Phone Number Processing (jika diperlukan)
+phonenumbers==8.13.25
+
+# QR Code Generation (jika diperlukan)
+qrcode==7.4.2
+
+# Barcode Processing
+python-barcode==0.15.1
+
+# Color Processing
+colorama==0.4.6
+
+# Terminal Utilities
+rich==13.7.0
+
+# Progress Tracking
+alive-progress==3.1.5
+
+# System Information
+distro==1.8.0
+
+# Package Information
+pkg-resources==0.0.0
+
+# Setup Tools
+setuptools==69.0.2
+wheel==0.42.0
+pip==23.3.1

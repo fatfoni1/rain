@@ -1,0 +1,18 @@
+{
+  "telegram_token": "8397820382:AAHfWyFfDhp26UH4asildxt5wGQ2jZcIiFM",
+  "chat_id": "7275352971",
+  "gologin_api_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGM1M2YyY2I4ZDE1Y2Y2YWQ4ZWI3ODkiLCJ0eXBlIjoiZGV2Iiwiand0aWQiOiI2OGM1NDFmODdlMjI2OGQ0ZmE4ZWVkMWYifQ.mqC43WKJH6it0hGjvlgo0gvXd0W8ZjzMMkLGLXUpMtY",
+  "gologin_profile_name": "profile 1",
+  "capsolver_token": "CAP-8ECADE2848BCBED1F1B0F7502DA321B77D5CC3B86607F0072D6C37055A3F41C9",
+  "cdp_url": "http://127.0.0.1:27351",
+  "target_url": "https://flip.gg/",
+  "check_interval_sec": 5,
+  "reload_every_sec": 300,
+  "join_cooldown_sec": 60,
+  "turnstile_wait_ms": 600000,
+  "after_join_idle_sec": 10,
+  "auto_solve_captcha": true,
+  "max_captcha_wait_time": 120,
+  "success_check_timeout": 15,
+  "entered_check_timeout": 10
+}
