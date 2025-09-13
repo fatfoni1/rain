@@ -3,6 +3,14 @@ from playwright.async_api import async_playwright, TimeoutError as PWTimeout
 from capsolver_handler import CapsolverHandler
 from telegram_notifier import TelegramNotifier
 
+# Pastikan stdout/stderr aman di Windows RDP: pakai UTF-8 dan hindari crash pada karakter non-ASCII
+import sys as _sys
+try:
+    _sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    _sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+except Exception:
+    pass
+
 # Import fitur baru untuk login/logout detection
 try:
     from asf_core import (
@@ -570,7 +578,7 @@ async def click_join(page, btn_selector):
         print(f"[CLICK] Klik tombol: {btn_selector}")
         return True
     except Exception as e:
-        print(f"[CLICK] Gagal klik {btn_selector} → {e}")
+        print(f"[CLICK] Gagal klik {btn_selector} -> {e}")
         return False
 
 async def detect_success_notification(page, timeout_sec=15):
@@ -1312,8 +1320,6 @@ async def main():
             try:
                 await page.goto(TARGET_URL, wait_until="networkidle", timeout=30000)
                 await asyncio.sleep(2)
-                # Tunggu 9 detik setelah load selesai sebelum klik Rain
-                await asyncio.sleep(9)
             except Exception as e:
                 print(f"[FAST] Gagal buka target: {e}")
 
@@ -1332,13 +1338,13 @@ async def main():
 
             notif_task = asyncio.create_task(notification_watchdog(page))
 
-            ok = await try_click_with_wait(30)
+            ok = await try_click_with_wait(60)
             if not ok:
                 # reload sekali sebelum fallback
                 try:
                     await page.reload(wait_until="networkidle")
                     await asyncio.sleep(2)
-                    ok = await try_click_with_wait(15)
+                    ok = await try_click_with_wait(45)
                 except Exception:
                     pass
             if not ok:
@@ -1346,7 +1352,7 @@ async def main():
                 try:
                     await page.goto("https://flip.gg/", wait_until="networkidle", timeout=30000)
                     await asyncio.sleep(2)
-                    ok = await try_click_with_wait(30)
+                    ok = await try_click_with_wait(60)
                 except Exception as e:
                     print(f"[FAST] Gagal buka homepage: {e}")
                     ok = False

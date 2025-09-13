@@ -216,6 +216,7 @@ async def run_executor(cfg: dict) -> int:
 async def watcher_main():
     cfg = load_config()
     target_url = cfg.get('target_url') or TARGET_URL_DEFAULT
+    headless_mode = bool(cfg.get('headless', False))
 
     while True:  # nonstop loop
         # 1) Ambil token & validasi/recovery
@@ -236,7 +237,7 @@ async def watcher_main():
 
         # 3) Launch Playwright biasa (injeksi JWT + cek active)
         async with async_playwright() as pw:
-            browser = await pw.chromium.launch(headless=False)
+            browser = await pw.chromium.launch(headless=headless_mode)
             context = await browser.new_context()
             await inject_token_init_script(context, token)
             page = await context.new_page()

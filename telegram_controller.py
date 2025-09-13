@@ -39,7 +39,8 @@ DEFAULT_CONFIG = {
     "reload_every_sec": 300,
     "join_cooldown_sec": 60,
     "turnstile_wait_ms": 600000,
-    "after_join_idle_sec": 10
+    "after_join_idle_sec": 10,
+    "headless": False
 }
 
 bot_process: Optional[subprocess.Popen] = None
@@ -261,7 +262,7 @@ def _cleanup_locked_account_web_data_from_error(err: Exception) -> Optional[List
             pass
     return deleted or None
 
-def _start_gologin_profile(token: str, profile_id: str) -> Tuple[bool, str]:
+def _start_gologin_profile(token: str, profile_id: str, headless: Optional[bool] = None) -> Tuple[bool, str]:
     """
     Start profil memakai SDK resmi, dapat debugger address (ip:port),
     set config['cdp_url'] dan simpan.
@@ -275,7 +276,10 @@ def _start_gologin_profile(token: str, profile_id: str) -> Tuple[bool, str]:
         return False, "Profile ID kosong."
 
     try:
-        gl = GoLogin({"token": token, "profile_id": profile_id})
+        opts = {"token": token, "profile_id": profile_id}
+        if headless is True:
+            opts["headless"] = True
+        gl = GoLogin(opts)
         debugger_address = gl.start()  # contoh: "127.0.0.1:54321"
         if not debugger_address or ":" not in debugger_address:
             return False, f"Gagal start profil: debugger address invalid ({debugger_address})"
@@ -291,7 +295,10 @@ def _start_gologin_profile(token: str, profile_id: str) -> Tuple[bool, str]:
         if deleted:
             logger.warning(f"[GoLogin] Menghapus file lock: {', '.join(deleted)} lalu retry start...")
             try:
-                gl = GoLogin({"token": token, "profile_id": profile_id})
+                opts = {"token": token, "profile_id": profile_id}
+                if headless is True:
+                    opts["headless"] = True
+                gl = GoLogin(opts)
                 debugger_address = gl.start()
                 if not debugger_address or ":" not in debugger_address:
                     return False, f"Gagal start profil (retry): debugger address invalid ({debugger_address})"
@@ -465,18 +472,57 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     reply_markup=reply_markup
                 )
                 return
-            bot_process = subprocess.Popen([sys.executable, START_BOT_SCRIPT])
-            start_time = datetime.now()
-            keyboard = [[InlineKeyboardButton("⬅️ Kembali ke Menu", callback_data="main_menu")]]
+            # Tampilkan opsi mode eksekusi
+            keyboard = [
+                [InlineKeyboardButton("👻 Headless", callback_data="start_bot_headless"),
+                 InlineKeyboardButton("🖥 Visible", callback_data="start_bot_visible")],
+                [InlineKeyboardButton("⬅️ Kembali ke Menu", callback_data="main_menu")]
+            ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             await query.edit_message_text(
-                "✅ Bot telah dimulai!\n\n"
-                "Status: 🟢 Berjalan\n"
-                "Target: " + config['target_url'] + "\n"
-                "Profil: " + config.get('gologin_profile_name', 'N/A'),
-                reply_markup=reply_markup,
-                parse_mode='Markdown'
+                "Pilih mode eksekusi bot:",
+                reply_markup=reply_markup
             )
+
+    elif query.data == "start_bot_headless":
+        # Simpan mode headless dan mulai bot (watcher)
+        config['headless'] = True
+        save_config()
+        if bot_process and bot_process.poll() is None:
+            bot_process.terminate()
+            await asyncio.sleep(0.5)
+        bot_process = subprocess.Popen([sys.executable, START_BOT_SCRIPT])
+        start_time = datetime.now()
+        keyboard = [[InlineKeyboardButton("⬅️ Kembali ke Menu", callback_data="main_menu")]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(
+            "✅ Bot telah dimulai (mode: Headless)!\n\n"
+            "Status: 🟢 Berjalan\n"
+            "Target: " + config['target_url'] + "\n"
+            "Profil: " + config.get('gologin_profile_name', 'N/A'),
+            reply_markup=reply_markup,
+            parse_mode='Markdown'
+        )
+
+    elif query.data == "start_bot_visible":
+        # Simpan mode visible dan mulai bot (watcher)
+        config['headless'] = False
+        save_config()
+        if bot_process and bot_process.poll() is None:
+            bot_process.terminate()
+            await asyncio.sleep(0.5)
+        bot_process = subprocess.Popen([sys.executable, START_BOT_SCRIPT])
+        start_time = datetime.now()
+        keyboard = [[InlineKeyboardButton("⬅️ Kembali ke Menu", callback_data="main_menu")]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(
+            "✅ Bot telah dimulai (mode: Visible)!\n\n"
+            "Status: 🟢 Berjalan\n"
+            "Target: " + config['target_url'] + "\n"
+            "Profil: " + config.get('gologin_profile_name', 'N/A'),
+            reply_markup=reply_markup,
+            parse_mode='Markdown'
+        )
 
     elif query.data == "stop_bot":
         is_running = bot_process and bot_process.poll() is None
@@ -562,8 +608,51 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             profile_id = pid
             config["gologin_profile_id"] = profile_id
             save_config()
+        # Tampilkan pilihan mode start profil
+        keyboard = [
+            [InlineKeyboardButton("👻 Headless", callback_data="gologin_start_profile_headless"),
+             InlineKeyboardButton("🖥 Visible", callback_data="gologin_start_profile_visible")],
+            [InlineKeyboardButton("⬅️ Kembali", callback_data="gologin_menu")]
+        ]
+        await query.edit_message_text("Pilih mode untuk menjalankan profil GoLogin:", reply_markup=InlineKeyboardMarkup(keyboard))
 
-        ok, msg = _start_gologin_profile(token, profile_id)
+    elif query.data == "gologin_start_profile_headless":
+        token = config.get('gologin_api_token','')
+        profile_id = config.get('gologin_profile_id','')
+        if not profile_id:
+            name = config.get('gologin_profile_name','')
+            pid, msg = _resolve_profile_by_name(name)
+            if not pid:
+                keyboard = [[InlineKeyboardButton("⬅️ Kembali", callback_data="gologin_menu")]]
+                await query.edit_message_text(f"❌ {msg}", reply_markup=InlineKeyboardMarkup(keyboard))
+                return
+            profile_id = pid
+            config["gologin_profile_id"] = profile_id
+            save_config()
+        # simpan mode headless
+        config['headless'] = True
+        save_config()
+        ok, msg = _start_gologin_profile(token, profile_id, headless=True)
+        keyboard = [[InlineKeyboardButton("⬅️ Kembali", callback_data="gologin_menu")]]
+        await query.edit_message_text(("✅ " if ok else "❌ ") + msg, reply_markup=InlineKeyboardMarkup(keyboard))
+
+    elif query.data == "gologin_start_profile_visible":
+        token = config.get('gologin_api_token','')
+        profile_id = config.get('gologin_profile_id','')
+        if not profile_id:
+            name = config.get('gologin_profile_name','')
+            pid, msg = _resolve_profile_by_name(name)
+            if not pid:
+                keyboard = [[InlineKeyboardButton("⬅️ Kembali", callback_data="gologin_menu")]]
+                await query.edit_message_text(f"❌ {msg}", reply_markup=InlineKeyboardMarkup(keyboard))
+                return
+            profile_id = pid
+            config["gologin_profile_id"] = profile_id
+            save_config()
+        # simpan mode visible
+        config['headless'] = False
+        save_config()
+        ok, msg = _start_gologin_profile(token, profile_id, headless=False)
         keyboard = [[InlineKeyboardButton("⬅️ Kembali", callback_data="gologin_menu")]]
         await query.edit_message_text(("✅ " if ok else "❌ ") + msg, reply_markup=InlineKeyboardMarkup(keyboard))
 

@@ -55,6 +55,7 @@ def load_bot_config():
         sys.exit(1)
 
 config = load_bot_config()
+headless_mode = bool(config.get("headless", False))
 
 
 
@@ -87,14 +88,22 @@ def start_gologin_profile(token, profile_id):
     logging.info("[GoLogin] Meminta GoLogin untuk menjalankan profil...")
     try:
         # Inisialisasi GoLogin dengan token Anda
-        gl = GoLogin({
+        # Siapkan opsi headless jika tersedia (bergantung dukungan SDK/versi)
+        opts = {
             "token": token,
             "profile_id": profile_id,
-            # "start_url": "https://flip.gg/" # URL bisa diset di sini jika perlu
-        })
+            # "start_url": "https://flip.gg/"
+        }
+        try:
+            if headless_mode:
+                # Beberapa versi SDK menerima 'headless': True; jika tidak, SDK akan mengabaikan field ini
+                opts["headless"] = True
+        except Exception:
+            pass
+        gl = GoLogin(opts)
 
         # Pustaka akan mencari port secara otomatis
-        logging.info("[GoLogin] Menjalankan profil menggunakan pustaka resmi...")
+        logging.info("[GoLogin] Menjalankan profil menggunakan pustaka resmi%s..." % (" (HEADLESS)" if headless_mode else ""))
         debugger_address = gl.start()
 
         # Ekstrak port dari alamat debugger
