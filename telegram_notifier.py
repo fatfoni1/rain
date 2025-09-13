@@ -26,7 +26,6 @@ class TelegramNotifier:
                     result = await response.json()
                     
                     if result.get("ok"):
-                        print("[TELEGRAM] Pesan berhasil dikirim")
                         return True
                     else:
                         print(f"[TELEGRAM] Error: {result.get('description')}")

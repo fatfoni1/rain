@@ -7,7 +7,7 @@
   "capsolver_token": "CAP-1234567890ABCDEF",
   
   "cdp_url": "http://127.0.0.1:9222",
-  "target_url": "https://flip.gg/",
+  "target_url": "https://flip.gg/profile",
   
   "check_interval_sec": 5,
   "reload_every_sec": 300,

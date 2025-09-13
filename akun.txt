@@ -1,5 +1,1 @@
-# Format: ID|Nama=Token
-# ID menentukan urutan akun
-
-1|akun1=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example_token_1
-2|akun2=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example_token_2
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoiNjY4MmU0N2QyNWY4MzJhZWIxMmViYjYwIn0sImlhdCI6MTc1NzM3MzE4MSwiZXhwIjoxNzU4NTgyNzgxfQ.YekTZeuK1g11Bivvr-Y57_LAaOAC1hLue7Mxa7p3DHw

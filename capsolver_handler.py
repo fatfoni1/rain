@@ -84,7 +84,7 @@ class CapsolverHandler:
         
         # Gunakan task type yang benar sesuai dokumentasi CapSolver
         task_data = {
-            "type": "AntiTurnstileTaskProxyLess",  # Task type yang benar
+            "type": "TurnstileTaskProxyLess",  # Task type proxyless terbaru
             "websiteURL": website_url,
             "websiteKey": website_key,
             "metadata": {
@@ -93,9 +93,9 @@ class CapsolverHandler:
             }
         }
         
-        # Jika ada proxy, gunakan AntiTurnstileTask dengan proxy
+        # Jika ada proxy, gunakan TurnstileTask dengan proxy
         if proxy:
-            task_data["type"] = "AntiTurnstileTask"
+            task_data["type"] = "TurnstileTask"
             task_data["proxy"] = proxy
             print(f"[CAPSOLVER] Menggunakan proxy: {proxy}")
         

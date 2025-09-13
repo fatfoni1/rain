@@ -1,0 +1,182 @@
+Dokumentasi Operasional Rain Bot (Watcher + GoLogin Executor)
+=============================================================
+
+Tujuan
+- Memantau tombol Rain hingga “active”, lalu mengeksekusi join secara cepat memakai profil GoLogin.
+- Menangani Turnstile (Cloudflare) secara otomatis, mendeteksi notifikasi sukses dan “already entered”, mengirim notifikasi Telegram, dan kembali ke mode pemantauan.
+- Melakukan injeksi JWT HANYA di Watcher agar login stabil, membaca saldo (wallet) dan wagerNeededForWithdraw (WNFW) dari /api/user, mengirim ringkasan ke Telegram, lalu perbandingan pasca klaim.
+- Nonstop loop, tanpa cooldown.
+
+Arsitektur Umum
+- Watcher (Playwright biasa)
+  - Injeksi JWT dari akun.txt.
+  - Buka https://flip.gg, validasi token (opsional), ambil saldo dan WNFW via /api/user.
+  - Loop cek “active” per 5 detik.
+  - Saat aktif, hentikan Watcher dan jalankan Executor.
+- Executor (GoLogin fast-exec, tanpa injeksi JWT)
+  - Buka https://flip.gg via CDP profil GoLogin (sudah login).
+  - Klik Rain, tangani Turnstile + reload kondisional hanya jika crash frame CF pada klik pertama (maks 1–2 kali), deteksi sukses, klik kedua, deteksi “already entered”, notifikasi, kembali ke Watcher.
+
+File & Data
+- akun.txt: token JWT langsung (satu baris, murni, tanpa ID/Nama). Contoh:
+  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example_token_2
+- seed.txt: daftar Nama=PrivateKey (dipakai oleh asf_token_refresher saat refresh token).
+- bot_config.json: konfigurasi aplikasi (token Telegram, GoLogin, CapSolver, target_url, dsb.).
+
+Selector Penting
+1) Deteksi “active” (Watcher dan Executor)
+- PRIZEBOX_ACTIVE:    button:has(.tss-1msi2sy-prizeBox.active)
+- BTN_ACTIVE:         button.tss-pqm623-content.active
+- JOIN_TEXT_ACTIVE:   span.tss-7bx55w-rainStartedText.active (umumnya dipakai via button:has(span.active))
+- Urutan deteksi: PRIZEBOX_ACTIVE → BTN_ACTIVE → button:has(JOIN_TEXT_ACTIVE)
+
+2) Turnstile (Cloudflare)
+- IFrame Turnstile (prioritas):
+  iframe[src*="challenges.cloudflare.com"], iframe[title*="Cloudflare"], iframe[title*="Turnstile"], iframe[title*="security challenge"]
+- Input token Turnstile:
+  input[name="cf-turnstile-response"]
+- Checkbox selector (mencakup variasi):
+  - input[type="checkbox"], [role="checkbox"], label:has([type="checkbox"])
+  - div[role="button"][tabindex], div[aria-checked]
+  - .cb-lb input[type="checkbox"], label.cb-lb, label.cb-lb input
+  - .cb-c input[type="checkbox"], input[type="checkbox"][class*="cb"]
+
+3) Notifikasi Sukses (flip.gg – exact match teks)
+- "Successfully joined rain!" (case-insensitive exact match)
+- Cek di main page + SEMUA frame ber-URL domain flip.gg (abaikan frame Cloudflare/Turnstile).
+
+4) Notifikasi “Already Entered” (flip.gg – exact match teks)
+- "You have already entered this rain!" (case-insensitive exact match)
+- Cek di main page + SEMUA frame ber-URL domain flip.gg (abaikan frame Cloudflare/Turnstile).
+
+5) Frame Filtering
+- Hanya cari notifikasi di main document + frame yang URL-nya domain flip.gg.
+- Abaikan frame dengan URL yang mengandung: cloudflare, turnstile, challenges.cloudflare.com.
+
+Endpoin HTTP Penting
+- GET https://api.flip.gg/api/user
+  - Header: x-auth-token: <JWT>
+  - Response (contoh field yang dipakai):
+    {
+      "user": {
+        "wallet": <float>,
+        "wagerNeededForWithdraw": <float>,
+        ...
+      },
+      "token": "<JWT>"
+    }
+
+Alur Lengkap (Step-by-Step)
+A. Watcher (Playwright biasa, injeksi JWT)
+1) Ambil token JWT dari akun.txt
+   - Baca baris per baris.
+   - Abaikan baris kosong atau diawali ‘#’.
+   - Gunakan baris pertama non-kosong sebagai token final (tanpa split ‘=’).
+
+2) Validasi token (opsional namun disarankan)
+   - validate_token_requests_fast(token):
+     - Jika valid: lanjut.
+     - Jika invalid: lakukan Recovery (lihat langkah 3).
+   - Alternatif (nyata di browser): tangkap /api/user (status 200 + ada field user) atau lakukan fetch manual dengan header x-auth-token. Jika 401/403/struktur tidak sesuai → invalid.
+
+3) Recovery token otomatis saat invalid
+   - Panggil asf_token_refresher.refresh_invalid_tokens(headless=True).
+   - Baca ulang akun.txt → ambil token baru → kembali ke langkah 2 (validasi ulang). Batasi percobaan recovery agar tidak loop tak berujung (mis. maksimal 2 siklus).
+
+4) Injeksi JWT (HANYA di Watcher)
+   - Gunakan context.add_init_script supaya token diset sebelum script flip.gg berjalan:
+     - Jika location.hostname berakhiran ‘flip.gg’, jalankan:
+       - localStorage.removeItem('token')
+       - localStorage.setItem('token', '<JWT_VALID>')
+       - (opsional) sessionStorage.setItem('token', '<JWT_VALID>')
+   - Lalu page.goto('https://flip.gg').
+   - Verifikasi: localStorage.getItem('token') === '<JWT_VALID>'.
+
+5) Ambil saldo & WNFW
+   - Pasang listener response untuk /api/user sebelum/tepat saat navigation.
+   - Jika tidak terpicu, lakukan fetch manual ke https://api.flip.gg/api/user dengan header x-auth-token.
+   - Parse aman ke float:
+     - wallet = user.wallet
+     - wagerNeededForWithdraw = user.wagerNeededForWithdraw
+   - Kirim ke Telegram (contoh ringkas):
+     - "Saldo awal: <wallet> | WNFW: <wagerNeededForWithdraw>"
+   - Simpan snapshot (mis. state.json) untuk perbandingan pasca klaim.
+
+6) Loop cek “active” setiap 5 detik
+   - Deteksi selector active berurutan: PRIZEBOX_ACTIVE → BTN_ACTIVE → button:has(JOIN_TEXT_ACTIVE).
+   - Jika belum aktif: await sleep 5s dan cek ulang.
+   - Jika aktif: hentikan Watcher, lanjut ke Executor.
+
+B. Executor (GoLogin fast-exec, TANPA injeksi JWT)
+1) Buka https://flip.gg via CDP profil GoLogin (sudah login)
+   - Tidak perlu injeksi token.
+
+2) Klik Rain pertama
+   - Cari tombol dengan urutan selector: PRIZEBOX_ACTIVE → BTN_ACTIVE → button:has(JOIN_TEXT_ACTIVE → span.active).
+   - Scroll ke viewport, klik, retry pendek jika perlu.
+
+3) Tangani Turnstile
+   - Tunggu dan masuk ke iframe Turnstile (prioritas IFRAME_TURNSTILE di atas).
+   - Coba klik checkbox menggunakan daftar selector checkbox.
+   - Jika token belum muncul, extract info (sitekey/action/cdata) dan solve via CapSolver; inject token ke TURNSTILE_INPUT, dispatch event input/change.
+   - Jeda 1–3 detik agar UI/flow settle.
+
+4) Reload kondisional hanya saat crash pada klik pertama
+   - Identifikasi frame CF (URL memuat: challenges.cloudflare.com/cloudflare/turnstile).
+   - Tanda crash: frame detached, Target.closed, Execution context destroyed saat akses/interaksi berulang.
+   - Jika crash → reload halaman dan ulangi klik Rain pertama. Batasi percobaan reload: maks 1–2 kali.
+   - Jika tidak crash → jangan reload (lanjut normal).
+
+5) Deteksi notifikasi sukses pertama (flip.gg)
+   - Cari exact text: "Successfully joined rain!" (case-insensitive).
+   - Area pencarian: main page + frames domain flip.gg; abaikan frame Cloudflare/Turnstile.
+   - Polling 500–1000 ms; timeout 10–15 detik.
+
+6) Klik Rain kedua (HANYA jika sukses pertama terdeteksi)
+   - Jeda 300–600 ms agar UI stabil.
+   - Jika toast menutupi tombol, tutup .notify-close (jika ada) atau scroll + retry klik (2–3 kali).
+
+7) Deteksi “already entered” (flip.gg)
+   - Cari exact text: "You have already entered this rain!" (case-insensitive) di main page + frames domain flip.gg.
+   - Abaikan frame Cloudflare/Turnstile.
+   - Polling 500–1000 ms; timeout 5–10 detik.
+
+8) Notifikasi Telegram sukses klaim
+   - Kirim satu kali per siklus eksekusi.
+
+9) Selesai Executor → kembali ke Watcher
+   - Tutup page/context GoLogin (opsional stop profil untuk hemat resource).
+   - Jalankan Watcher lagi.
+
+C. Pasca sukses: cek ulang saldo & WNFW (Watcher)
+1) Injeksi JWT (seperti langkah A.4), buka https://flip.gg.
+2) Ambil saldo & WNFW (seperti langkah A.5).
+3) Bandingkan dengan snapshot awal
+   - Telegram ringkasan:
+     - Sebelum: saldo X, WNFW Y
+     - Sesudah: saldo X2, WNFW Y2
+     - Delta: saldo ΔX, WNFW ΔY (jelaskan bertambah/berkurang)
+4) Lanjut ke loop cek active 5 detik (A.6) → nonstop.
+
+Kebijakan & Parameter
+- Interval loop cek “active”: 5 detik.
+- Reload Executor: HANYA saat crash frame Cloudflare di klik pertama; batas 1–2 kali.
+- Deteksi notifikasi: gunakan exact-match teks (case-insensitive), jangan andalkan inline style.
+- Filter frame: hanya main page + frames domain flip.gg; abaikan cloudflare/turnstile/challenges.cloudflare.com.
+- Tidak ada cooldown.
+- Validasi token (opsional namun disarankan): validate_token_requests_fast → refresh_invalid_tokens jika invalid; update akun.txt dan ulangi injeksi.
+
+Tips Keamanan & Stabilitas
+- Jangan log token JWT di konsol/file.
+- Pastikan seed.txt valid agar refresh token berhasil.
+- Gunakan add_init_script untuk injeksi JWT di Watcher agar app membaca token sebelum bootstrap.
+- Tangani overlay toast (.notify-close) yang dapat menghalangi klik kedua.
+- Saat fetch manual /api/user dari page.evaluate, pastikan header x-auth-token disertakan.
+
+Contoh Format Notifikasi Telegram (ringkas)
+- Watcher (awal): "Saldo awal: 0.00417 | WNFW: 66.99"
+- Executor (berhasil): "SUKSES JOIN RAIN! (flip.gg)"
+- Watcher (pasca klaim): "Saldo: 0.00510 (+0.00093) | WNFW: 60.00 (-6.99)"
+
+Penutup
+Dokumentasi ini mendeskripsikan seluruh langkah operasional, selector, kebijakan reload, validasi token, dan siklus nonstop. Implementasi mengikuti dokumen ini akan memastikan alur berjalan stabil, minim false positive dari widget Cloudflare, serta memberikan telemetry saldo/WNFW sebelum dan sesudah klaim untuk memverifikasi hasil.

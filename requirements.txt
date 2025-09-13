@@ -215,4 +215,5 @@ pkg-resources==0.0.0
 # Setup Tools
 setuptools==69.0.2
 wheel==0.42.0
+gologin>=2024.1.17145115
 pip==23.3.1
