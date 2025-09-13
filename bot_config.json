@@ -4,7 +4,7 @@
   "gologin_api_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGM1M2UwNzdlMjI2OGQ0ZmE4YTcxNzAiLCJ0eXBlIjoiZGV2Iiwiand0aWQiOiI2OGM1Njk0NGM2OTZjZTIzNGMyOTA5ZTkifQ.b4u9z2zkK1fZflwVdip75bOIsmAlB-MbRFmHcxaxuKY",
   "gologin_profile_name": "profile 1",
   "capsolver_token": "CAP-8ECADE2848BCBED1F1B0F7502DA321B77D5CC3B86607F0072D6C37055A3F41C9",
-  "cdp_url": "http://127.0.0.1:23171",
+  "cdp_url": "http://127.0.0.1:13585",
   "target_url": "https://flip.gg/profile",
   "check_interval_sec": 5,
   "reload_every_sec": 300,
@@ -17,5 +17,6 @@
   "entered_check_timeout": 10,
   "live_log_enabled": false,
   "gologin_profile_id": "68c5694e45178e3e3b18b45d",
-  "fast_execute": true
+  "fast_execute": true,
+  "headless": false
 }
